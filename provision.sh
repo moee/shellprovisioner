@@ -45,7 +45,7 @@ for task in `cat $configs_dir/$config`; do
     $tasks_dir/$task/do.sh
     if [ $? != 0 ]; then
         error "task $task failed. Rolling back."
-        for task in `tac configs/samples/failingtask | head -n $num`; do
+        for task in `tac configs/samples/failingtask | tail -n $num`; do
             info "undo $task"
             $tasks_dir/$task/undo.sh            
         done
