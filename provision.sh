@@ -26,16 +26,13 @@ info "Running config $config"
 
 info "Checking tasks"
 for task in `cat $configs_dir/$config`; do
-    # echo ">>>>> $task"
     if [ ! -d $tasks_dir/$task ]; then
         fatal "task directory $tasks_dir/$task not found" 
     fi
 
-    for tasktype in "do.sh" "undo.sh"; do
-        if [ ! -f $tasks_dir/$task/$tasktype ]; then
-            fatal "task file $tasks_dir/$task/$tasktype not found" 
-        fi
-    done
+    if [ ! -f $tasks_dir/$task/do.sh ]; then
+        fatal "task file $tasks_dir/$task/do.sh not found" 
+    fi
 done
 
 info "Running tasks"
@@ -46,8 +43,10 @@ for task in `cat $configs_dir/$config`; do
     if [ $? != 0 ]; then
         error "task $task failed. Rolling back."
         for task in `tac configs/samples/failingtask | tail -n $num`; do
-            info "undo $task"
-            $tasks_dir/$task/undo.sh            
+            if [ -f $tasks_dir/$task/undo.sh ]; then
+                info "undo $task"
+                $tasks_dir/$task/undo.sh            
+            fi
         done
         error "provisioning of $config failed."
         exit 1
@@ -58,4 +57,3 @@ for task in `cat $configs_dir/$config`; do
 done
 
 info "$config is now ready."
-
