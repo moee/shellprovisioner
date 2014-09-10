@@ -39,13 +39,13 @@ info "Running tasks"
 num=1 
 for task in `cat $configs_dir/$config`; do
     info "starting task $num: $task"
-    $tasks_dir/$task/do.sh
+    bash $tasks_dir/$task/do.sh
     if [ $? != 0 ]; then
         error "task $task failed. Rolling back."
         for task in `tac $configs_dir/$config | tail -n $num`; do
             if [ -f $tasks_dir/$task/undo.sh ]; then
                 info "undo $task"
-                $tasks_dir/$task/undo.sh            
+                bash $tasks_dir/$task/undo.sh            
             fi
         done
         error "provisioning of $config failed."
