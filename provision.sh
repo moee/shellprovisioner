@@ -25,7 +25,7 @@ fi
 info "Running config $config"
 
 info "Checking tasks"
-for task in `cat $configs_dir/$config`; do
+for task in `cat $configs_dir/$config | sed $'s/\r$//'`; do
     if [ ! -d $tasks_dir/$task ]; then
         fatal "task directory $tasks_dir/$task not found" 
     fi
@@ -37,7 +37,7 @@ done
 
 info "Running tasks"
 num=1 
-for task in `cat $configs_dir/$config`; do
+for task in `cat $configs_dir/$config | sed $'s/\r$//'`; do
     info "starting task $num: $task"
     bash $tasks_dir/$task/do.sh
     if [ $? != 0 ]; then
