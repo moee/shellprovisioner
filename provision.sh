@@ -39,7 +39,23 @@ done
 
 info "Running tasks"
 num=1 
-for task in `cat $ZDSP_CONFIG_DIR/$config | sed $'s/\r$//'`; do
+
+base=""
+configs=""
+
+for comp in `echo $config | sed -e 's#/#\n#g'`; do
+    base=$base$comp
+    if [ -f $ZDSP_CONFIG_DIR/$base/__init__ ]; then
+        configs="$configs $ZDSP_CONFIG_DIR/$base/__init__"
+    else
+        if [ -f $ZDSP_CONFIG_DIR/$base ]; then
+            configs="$configs $ZDSP_CONFIG_DIR/$base"
+        fi
+    fi
+    base=$base/
+done
+
+for task in `cat $configs | sed $'s/\r$//'`; do
     info "starting task $num: $task"
     sed -i $'s/\r$//' $ZDSP_TASK_DIR/$task/do.sh
     bash $ZDSP_TASK_DIR/$task/do.sh
