@@ -15,3 +15,4 @@ Samples
 
 * Hello World: `./provision.sh samples/helloworld`
 * Failing Task: `./provision.sh samples/failingtask`
+* Nested Provisioning: `./provision.sh samples/nested_provisioning`
