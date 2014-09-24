@@ -1,3 +1,4 @@
 samples/helloworld
+samples/non_directory_task
 samples/no_undo
 samples/failingtask

@@ -39,13 +39,14 @@ provision() {
             continue
         fi
 
-        if [ ! -d $ZDSP_TASK_DIR/$task ]; then
-            fatal "task directory $ZDSP_TASK_DIR/$task not found" 
+        if [ -d $ZDSP_TASK_DIR/$task ]; then
+            if [ ! -f $ZDSP_TASK_DIR/$task/do.sh ]; then
+                fatal "task file $ZDSP_TASK_DIR/$task/do.sh not found" 
+            fi
+        elif [ ! -f $ZDSP_TASK_DIR/$task ]; then
+            fatal "task file $ZDSP_TASK_DIR/$task not found"
         fi
 
-        if [ ! -f $ZDSP_TASK_DIR/$task/do.sh ]; then
-            fatal "task file $ZDSP_TASK_DIR/$task/do.sh not found" 
-        fi
     done
 
     info "Running tasks"
@@ -73,8 +74,14 @@ provision() {
             provision `echo $task | sed s/^provision://g `
         fi
 
-        sed -i $'s/\r$//' $ZDSP_TASK_DIR/$task/do.sh
-        bash $ZDSP_TASK_DIR/$task/do.sh
+        if [ -f $ZDSP_TASK_DIR/$task ]; then
+            scriptfile=$ZDSP_TASK_DIR/$task
+        else
+            scriptfile=$ZDSP_TASK_DIR/$task/do.sh
+        fi
+
+        sed -i $'s/\r$//' $scriptfile
+        bash $scriptfile
         if [ $? != 0 ]; then
             error "task $task failed. Rolling back."
             for task in `tac $ZDSP_CONFIG_DIR/$config | tail -n $num`; do
