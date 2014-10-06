@@ -10,6 +10,14 @@ To add a new task, create a new directory in ./tasks. Inside this directory, cre
 
 To add a new configuration, simply put a file that contains one task per line into the ./configs directory. See section Samples for usage examples.
 
+### Environment Variables ###
+
+Inside the tasks scripts the following environment variables can be used:
+
+* `$ZDSP_BASE_DIR` Points to the directory of `./provision.sh`
+* `$ZDSP_TASK_DIR` Points to the directory where the tasks are located
+* `$ZDSP_CONFIG_DIR` Points to the configuration directory
+
 Samples
 -------
 
