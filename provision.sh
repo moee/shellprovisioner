@@ -2,17 +2,44 @@
 
 config=$1
 
-export ZDSP_BASE_DIR="$( cd "$( dirname "$0" )" && pwd )"
-export ZDSP_TASK_DIR=$ZDSP_BASE_DIR/tasks
-export ZDSP_CONFIG_DIR=$ZDSP_BASE_DIR/configs
+ZDSP_BASE_DIR="$( cd "$( dirname "$0" )" && pwd )"
+ZDSP_TASK_DIR=$ZDSP_BASE_DIR/tasks
+ZDSP_CONFIG_DIR=$ZDSP_BASE_DIR/configs
 
-success () { echo -e "\e[00;32mSuccess\e[00m"; }
-error () { echo -e "\e[00;31mError: $1\e[00m"; }
-fatal () { echo -e "\e[00;31mFatal Error: $1\e[00m"; exit 1; }
-info () { echo -e "\e[00;34m$1\e[00m"; }
+read -r -d '' ZDSP_GLOBAL_FUNC <<'FUNC'
+zdsp_success () { echo -e "\e[00;32m${1:-Success}\e[00m"; };
+zdsp_error () { echo -e "\e[00;31mError: $1\e[00m"; };
+zdsp_fatal () { echo -e "\e[00;31mFatal Error: $1\e[00m"; exit 1; };
+zdsp_info () { echo -e "\e[00;34m$1\e[00m"; };
+FUNC
+
+eval $ZDSP_GLOBAL_FUNC
 
 usage() {
     echo "Usage: $0 configname"
+    echo "Available configurations:"
+    for f in $(find $ZDSP_CONFIG_DIR -type f); do
+        if [ $(echo $f | grep -v "__init__") ]; then
+            echo $f | sed "s#$ZDSP_CONFIG_DIR/##g"
+        fi
+    done
+}
+
+run_task() {
+    vars=$(echo "$2" | sed -e "s#export ##g")
+    c=$ZDSP_GLOBAL_FUNC;
+    c+=$'\n'
+    c+=ZDSP_TASK_DIR=$ZDSP_TASK_DIR;
+    c+=$'\n'
+    c+=ZDSP_CONFIG_DIR=$ZDSP_CONFIG_DIR;
+    c+=$'\n'
+    c+=ZDSP_BASE_DIR=$ZDSP_BASE_DIR;
+    c+=$'\n'
+    c+=$2;
+    c+=$'\n'
+    c+=$(cat $1)
+    c+=$'\n'
+    bash -c "$c"
 }
 
 if [ -z $config ]; then
@@ -25,13 +52,18 @@ provision() {
     config=$1
 
     if [ ! -f $ZDSP_CONFIG_DIR/$config ]; then
-        fatal "Config $config does not exist."
+        zdsp_fatal "Config $config does not exist. To create it, add the file $ZDSP_CONFIG_DIR/$config."
     fi
 
-    info "Running config $config"
+    zdsp_info "Running config $config"
 
-    info "Checking tasks"
-    for task in `cat $ZDSP_CONFIG_DIR/$config | sed $'s/\r$//'`; do
+    zdsp_info "Checking tasks"
+    
+    while read -r task; do
+
+        if [[ $task == export* ]]; then
+            continue
+        fi
 
         echo $task
 
@@ -41,15 +73,15 @@ provision() {
 
         if [ -d $ZDSP_TASK_DIR/$task ]; then
             if [ ! -f $ZDSP_TASK_DIR/$task/do.sh ]; then
-                fatal "task file $ZDSP_TASK_DIR/$task/do.sh not found" 
+                zdsp_fatal "task file $ZDSP_TASK_DIR/$task/do.sh not found" 
             fi
         elif [ ! -f $ZDSP_TASK_DIR/$task ]; then
-            fatal "task file $ZDSP_TASK_DIR/$task not found"
+            zdsp_fatal "task file $ZDSP_TASK_DIR/$task not found"
         fi
 
-    done
+    done < $ZDSP_CONFIG_DIR/$config
 
-    info "Running tasks"
+    zdsp_info "Running tasks"
     num=1 
 
     base=""
@@ -67,12 +99,21 @@ provision() {
         base=$base/
     done
 
-    for task in `cat $configs | sed $'s/\r$//'`; do
-        info "starting task $num: $task"
+    script_vars=''
+
+    while read -r task
+    do
+
+        if [[ $task == export* ]]; then
+            script_vars+="$task;"
+            continue
+        fi
 
         if [[ $task == provision:* ]]; then
             provision `echo $task | sed s/^provision://g `
         fi
+
+        zdsp_info "◆ Starting task $num: $task"
 
         if [ -f $ZDSP_TASK_DIR/$task ]; then
             scriptfile=$ZDSP_TASK_DIR/$task
@@ -81,26 +122,26 @@ provision() {
         fi
 
         sed -i $'s/\r$//' $scriptfile
-        bash $scriptfile
+        run_task $scriptfile "$script_vars"
         if [ $? != 0 ]; then
-            error "task $task failed. Rolling back."
+            zdsp_error "task $task failed. Rolling back."
             for task in `tac $ZDSP_CONFIG_DIR/$config | tail -n $num`; do
                 if [ -f $ZDSP_TASK_DIR/$task/undo.sh ]; then
-                    info "undo $task"
+                    zdsp_info "undo $task"
                     sed -i $'s/\r$//' $ZDSP_TASK_DIR/$task/undo.sh
                     bash $ZDSP_TASK_DIR/$task/undo.sh            
                 fi
             done
-            error "provisioning of $config failed."
+            zdsp_error "Provisioning of $config failed, because the task $task dir not finish successfully."
             exit 1
         else
-            info "success"
+            zdsp_success "✓ Task $task: Success"
         fi
         let num=num+1
-    done
+    done < <(cat $configs)
 
 }
 
 provision $config
 
-info "$config is now ready."
+zdsp_info "$config is now ready."
