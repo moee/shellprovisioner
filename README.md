@@ -4,6 +4,7 @@ The zero dependency shell provisioner for bash.
 
 ## Features
 
+* Only one file needed (`./zdsp`)
 * Inheritance
 * Rollback
 * Task Isolation
@@ -32,3 +33,4 @@ Inside the tasks scripts the following variables can be used:
 * Hello World: `./zdsp samples/helloworld`
 * Failing Task: `./zdsp samples/failingtask`
 * Nested Provisioning: `./zdsp samples/nested_provisioning`
+* https://github.com/moee/vim_setup
