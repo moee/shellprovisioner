@@ -7,10 +7,10 @@ ZDSP_TASK_DIR=$ZDSP_BASE_DIR/tasks
 ZDSP_CONFIG_DIR=$ZDSP_BASE_DIR/configs
 
 read -r -d '' ZDSP_GLOBAL_FUNC <<'FUNC'
-zdsp_success () { echo -e "\e[00;32m${1:-Success}\e[00m"; };
-zdsp_error () { echo -e "\e[00;31mError: $1\e[00m"; };
-zdsp_fatal () { echo -e "\e[00;31mFatal Error: $1\e[00m"; exit 1; };
-zdsp_info () { echo -e "\e[00;34m$1\e[00m"; };
+zdsp_success () { echo -e "\x1B[00;32m${1:-Success}\x1B[00m"; };
+zdsp_error () { echo -e "\x1B[00;31mError: $1\x1B[00m"; };
+zdsp_fatal () { echo -e "\x1B[00;31mFatal Error: $1\x1B[00m"; exit 1; };
+zdsp_info () { echo -e "\x1B[00;34m$1\x1B[00m"; };
 FUNC
 
 eval $ZDSP_GLOBAL_FUNC
