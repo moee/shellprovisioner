@@ -87,7 +87,7 @@ provision() {
     base=""
     configs=""
 
-    for comp in `echo $config | sed -e 's#/#\n#g'`; do
+    for comp in `echo $config | sed -e 's#/# #g'`; do
         base=$base$comp
         if [ -f $ZDSP_CONFIG_DIR/$base/__init__ ]; then
             configs="$configs $ZDSP_CONFIG_DIR/$base/__init__"
@@ -100,7 +100,7 @@ provision() {
     done
 
     script_vars=''
-
+	
     while read -r task
     do
 
@@ -110,7 +110,7 @@ provision() {
         fi
 
         if [[ $task == provision:* ]]; then
-            provision `echo $task | sed s/^provision://g `
+            provision `echo $task | sed "s/^provision://g" `
         fi
 
         zdsp_info "◆ Starting task $num: $task"
@@ -121,14 +121,12 @@ provision() {
             scriptfile=$ZDSP_TASK_DIR/$task/do.sh
         fi
 
-        sed -i $'s/\r$//' $scriptfile
         run_task $scriptfile "$script_vars"
         if [ $? != 0 ]; then
             zdsp_error "task $task failed. Rolling back."
-            for task in `tac $ZDSP_CONFIG_DIR/$config | tail -n $num`; do
+            for task in `tail -r $ZDSP_CONFIG_DIR/$config | tail -n $num`; do
                 if [ -f $ZDSP_TASK_DIR/$task/undo.sh ]; then
                     zdsp_info "undo $task"
-                    sed -i $'s/\r$//' $ZDSP_TASK_DIR/$task/undo.sh
                     bash $ZDSP_TASK_DIR/$task/undo.sh            
                 fi
             done
@@ -139,7 +137,6 @@ provision() {
         fi
         let num=num+1
     done < <(cat $configs)
-
 }
 
 provision $config
